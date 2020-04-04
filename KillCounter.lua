@@ -3,9 +3,16 @@ KillCounterVarrables = {
 }
 
 
+
+
 -- Set to false to use file-scoped variables or true to use the new addon-scoped variables
 -- local useAddonScope = true
 -- local addonName, MenuClass
+
+local KillCounterFont = "Interface\\AddOns\\KillCounter\\Fonts\\Chela.ttf"
+local fontSize = 15
+local fontFlags = "OUTLINE"
+local redClr = "|cffE72CA0"
 
 local xpos1 = 0
 local ypos1 = 0
@@ -14,7 +21,7 @@ local ypos2 = 0
 local xpos3 = 0
 local ypos3 = 0
 
-local names = ""
+local names = "Go Git Sumtin"
 local counts = ""
 local namesAndCounts = ""
 local total = 0
@@ -70,6 +77,8 @@ local CreateFrames = function()
 	KCFrame=CreateFrame("Frame","KCFrame",UIParent)
 	KCNames=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
 	KCCounts=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
+	KCTitle=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
+	KCSessionTime=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
 	KCPostButton = CreateFrame("Button","KCPostButton",KCFrame,"UIPanelButtonGrayTemplate")
 	
 	
@@ -182,10 +191,17 @@ local SetDefaults = function()
 	KCNames:SetPoint("TOPLEFT")
 	KCNames:SetJustifyH("LEFT")
 	KCNames:SetText("Name1\nName2")
+	KCNames:SetFont(KillCounterFont, fontSize, fontFlags)
 	
 	KCCounts:SetPoint("TOPRIGHT")
 	KCCounts:SetJustifyH("RIGHT")
 	KCCounts:SetText("##")
+	KCCounts:SetFont(KillCounterFont, fontSize, fontFlags)
+	
+	KCTitle:SetPoint("BOTTOMLEFT", KCFrame, "TOPLEFT")
+	KCTitle:SetJustifyH("LEFT")
+	KCTitle:SetText(redClr .. "Kill Counter 1.0")
+	KCTitle:SetFont(KillCounterFont, fontSize*1.5, fontFlags)
 	
 	KCPostButton:SetPoint("TOPRIGHT", KCFrame, "BOTTOMRIGHT")
 	KCPostButton:SetText("Post")
