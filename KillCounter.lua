@@ -8,6 +8,7 @@ KillCounterVarrables = {
 -- Set to false to use file-scoped variables or true to use the new addon-scoped variables
 -- local useAddonScope = true
 -- local addonName, MenuClass
+local versionNumber = "1.0"
 
 local KillCounterFont = "Interface\\AddOns\\KillCounter\\Fonts\\Chela.ttf"
 local fontSize = 15
@@ -76,8 +77,8 @@ local CreateFrames = function()
 	KCTitle=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
 	KCSessionTime=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
 	KCPostButton=CreateFrame("Button","KCPostButton",KCFrame,"UIPanelButtonGrayTemplate")
-	
-	
+	KCResetButton=CreateFrame("Button","KCResetButton", KCFrame,"UIPanelButtonGrayTemplate")
+	KCLockButton=CreateFrame("Button","KCLockButton", KCFrame, "UIPanelButtonGrayTemplate")
 end
 
 local CreatePostMenu = function()
@@ -135,10 +136,23 @@ local SetDefaults = function()
 	KCPostButton:SetWidth(50)
 	KCPostButton:SetHeight(20)
 	KCPostButton:RegisterForClicks("LeftButtonUp")
+	
+	KCResetButton:SetPoint("TOPRIGHT", KCPostButton, "TOPLEFT")
+	KCResetButton:SetText("Reset")
+	KCResetButton:SetWidth(50)
+	KCResetButton:SetHeight(20)
+	KCResetButton:RegisterForClicks("LeftButtonUp")
+	
+	KCLockButton:SetPoint("TOPRIGHT", KCResetButton, "TOPLEFT")
+	KCLockButton:SetText("Lock")
+	KCLockButton:SetWidth(50)
+	KCLockButton:SetHeight(20)
+	KCLockButton:RegisterForClicks("LeftButtonUp")
 end
 
 local RegisterEvents = function()
 	KCFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	KCFrame:RegisterEvent("ADDON_LOADED")
 end
 
 local SendToTable = function(name)
@@ -184,7 +198,7 @@ local secondsFormat = function(t)
 end
 
 local SizeWindow = function()
-	KCFrame:SetSize(math.max((KCNames:GetStringWidth() + KCCounts:GetStringWidth()), 200),KCNames:GetStringHeight())
+	KCFrame:SetSize(math.max((KCNames:GetStringWidth() + KCCounts:GetStringWidth()), 200), math.max(KCNames:GetStringHeight(), 50))
 end
 
 local Display = function()
@@ -309,13 +323,16 @@ end
 
 KCFrame:SetScript("OnEvent",
 	function(self, event, ...)
-	if(event == "COMBAT_LOG_EVENT_UNFILTERED") then
-		GetCombatLogInfo()
-	end
+		local arg1 = ...
+		if(event == "COMBAT_LOG_EVENT_UNFILTERED") then
+			GetCombatLogInfo()
+		elseif(event == "ADDON_LOADED" and arg1 == "KillCounter") then
+			print(pinkClr .. "KillCounter " .. versionNumber .. " Loaded!")
+		end
 end)
 
 KCFrame:SetScript("OnMouseDown", function(self, button)
-	if button == "LeftButton" and not self.isMoving then
+	if button == "LeftButton" and not self.isMoving and KCFrame:IsMovable() then
 		_, _, _, xpos1, ypos1 = KCFrame:GetPoint(1)
 		self:StartMoving();
 		_, _, _, xpos2, ypos2 = KCFrame:GetPoint(1)
@@ -341,6 +358,22 @@ end)
 
 KCPostButton:SetScript('OnMouseUp', function(self, button)
 	ToggleDropDownMenu(1, nil, KCPostMenu, self:GetName(), 0, 0)
+end)
+
+KCResetButton:SetScript('OnMouseUp', function(self, button)
+	killLog = {}
+	Display()
+	tStart = time()
+end)
+
+KCLockButton:SetScript('OnMouseUp', function(self, button)
+	if(KCFrame:IsMovable()) then
+		KCFrame:SetMovable(false)
+		KCLockButton:SetText("Unlock")
+	else
+		KCFrame:SetMovable(true)
+		KCLockButton:SetText("lock")
+	end
 end)
 
 KCFrame:SetScript("OnUpdate", KCFrame.OnUpdate)
