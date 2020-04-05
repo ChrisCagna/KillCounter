@@ -33,6 +33,11 @@ local total = 0
 local timeSinceUpdate = 0
 local updateInterval = 1
 
+local playerName = UnitName("player")
+local trackGlobalKills = false
+
+
+
 killLog = { }
 
 SLASH_KILLCOUNTER1 = "/kc"
@@ -170,7 +175,11 @@ end
 
 local GetCombatLogInfo = function()
 	local aaa, eventType, bbb, sourceGUID, sourceName, ccc, ddd, destGUID, destName, eee, fff, spellID = CombatLogGetCurrentEventInfo()
-		if(eventType == "UNIT_DIED") then
+		if(trackGlobalKills) then
+			if(eventType == "UNIT_DIED") then
+				SendToTable(destName)
+			end
+		elseif(eventType == "PARTY_KILL" and sourceName == playerName) then
 			SendToTable(destName)
 		end
 end
