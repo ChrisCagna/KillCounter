@@ -49,7 +49,16 @@ local function handler(msg, editBox)
 		--killLog = { }
 		
 		
+
+	elseif(msg == "+") then
+		fontSize = fontSize + 5
+		updateFontSize()
+		
+	elseif(msg == "-") then
+		fontSize = fontSize - 5
+		updateFontSize()
 	end
+	
 	
 	
 end
@@ -85,17 +94,6 @@ local CreatePostMenu = function()
 	 	KCPostMenu = CreateFrame("Frame", "KC_PostMenu")
 		KCPostMenu.displayMode = "MENU"
 		KCPostMenu.info = {}
-		KCPostMenu.HideMenu = function()
-			if UIDROPDOWNMENU_OPEN_MENU == KCPostMenu then
-				CloseDropDownMenus()
-			end
-		end
-		
-		KCPostMenu.HideMenu = function()
-			if UIDROPDOWNMENU_OPEN_MENU == KCPostMenu then
-				CloseDropDownMenus()
-			end
-		end
 end
 
 local SetDefaults = function()
@@ -150,6 +148,13 @@ local SetDefaults = function()
 	KCLockButton:RegisterForClicks("LeftButtonUp")
 end
 
+updateFontSize = function()
+	KCNames:SetFont(KillCounterFont, fontSize, fontFlags)
+	KCCounts:SetFont(KillCounterFont, fontSize, fontFlags)
+	KCTitle:SetFont(KillCounterFont, fontSize*1.5, fontFlags)
+	KCSessionTime:SetFont(KillCounterFont, fontSize*1.5, fontFlags)
+end
+
 local RegisterEvents = function()
 	KCFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	KCFrame:RegisterEvent("ADDON_LOADED")
@@ -164,7 +169,7 @@ local SendToTable = function(name)
 end
 
 local GetCombatLogInfo = function()
-	local _, eventType, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID = CombatLogGetCurrentEventInfo()
+	local aaa, eventType, bbb, sourceGUID, sourceName, ccc, ddd, destGUID, destName, eee, fff, spellID = CombatLogGetCurrentEventInfo()
 		if(eventType == "UNIT_DIED") then
 			SendToTable(destName)
 		end
@@ -198,7 +203,7 @@ local secondsFormat = function(t)
 end
 
 local SizeWindow = function()
-	KCFrame:SetSize(math.max((KCNames:GetStringWidth() + KCCounts:GetStringWidth()), 200), math.max(KCNames:GetStringHeight(), 50))
+	KCFrame:SetSize(math.max((KCNames:GetStringWidth() + KCCounts:GetStringWidth()), (KCTitle:GetStringWidth()*1.75)), math.max(KCNames:GetStringHeight(), 50))
 end
 
 local Display = function()
@@ -270,8 +275,9 @@ KCPostMenu.initialize = function(self, level)
 		info.hasArrow = nil
 		info.value = nil
 		info.notCheckable = 1
-		info.func         = self.HideMenu()
-
+		info.func         = function()
+			CloseDropDownMenus()
+		end
 		UIDropDownMenu_AddButton(info, level)
 		
 	elseif level == 2 then
@@ -280,32 +286,38 @@ KCPostMenu.initialize = function(self, level)
 			info.text = "Party"
 			info.func = function()
 				SendToChat("PARTY","TOTAL")
+				CloseDropDownMenus()
 			end
 			UIDropDownMenu_AddButton(info, level)
 			
 			info.text = "Raid"
 			info.func = function()
 				SendToChat("RAID","TOTAL")
+				CloseDropDownMenus()
 			end
 			UIDropDownMenu_AddButton(info, level)
 			
 			info.text = "Whisper"
+			info.disabled = true
 			UIDropDownMenu_AddButton(info, level)
 			
 		elseif UIDROPDOWNMENU_MENU_VALUE == "submenu2" then
 			info.text = "Party"
 			info.func = function()
 				SendToChat("PARTY","ALL")
+				CloseDropDownMenus()
 			end
 			UIDropDownMenu_AddButton(info, level)
 			
 			info.text = "Raid"
 			info.func = function()
 				SendToChat("RAID","ALL")
+				CloseDropDownMenus()
 			end
 			UIDropDownMenu_AddButton(info, level)
 			
 			info.text = "Whisper"
+			info.disabled = true
 			UIDropDownMenu_AddButton(info, level)
 		end
 	end
