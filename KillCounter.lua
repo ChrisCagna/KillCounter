@@ -12,7 +12,7 @@ KillCounterVarrables = {
 local KillCounterFont = "Interface\\AddOns\\KillCounter\\Fonts\\Chela.ttf"
 local fontSize = 15
 local fontFlags = "OUTLINE"
-local redClr = "|cffE72CA0"
+local pinkClr = "|cffE72CA0"
 
 local xpos1 = 0
 local ypos1 = 0
@@ -21,10 +21,16 @@ local ypos2 = 0
 local xpos3 = 0
 local ypos3 = 0
 
+
+local tStart = time()
+local sessionTime = 0
+
 local names = "Go Git Sumtin"
 local counts = ""
-local namesAndCounts = ""
 local total = 0
+
+local timeSinceUpdate = 0
+local updateInterval = 1
 
 killLog = { }
 
@@ -63,29 +69,19 @@ backdrop =
 
 end
 
--- LoadTextures = function()
-	-- local width = 10
-	-- local height = 10
-	-- local reportButtonTexture = KCFrame:CreateTexture("$parentGlow", "OVERLAY")
-	-- KCFrame:SetAlpha(1)
-	-- reportButtonTexture:SetTexture("Interface\\AddOns\\KillCounter\\report_button.blp")
-	-- reportButtonTexture:SetPoint("TOPRIGHT")	
-	-- reportButtonTexture:SetSize(width,height)
--- end
-
 local CreateFrames = function()
 	KCFrame=CreateFrame("Frame","KCFrame",UIParent)
 	KCNames=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
 	KCCounts=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
 	KCTitle=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
 	KCSessionTime=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
-	KCPostButton = CreateFrame("Button","KCPostButton",KCFrame,"UIPanelButtonGrayTemplate")
+	KCPostButton=CreateFrame("Button","KCPostButton",KCFrame,"UIPanelButtonGrayTemplate")
 	
 	
 end
 
-
-local 	KCPostMenu = CreateFrame("Frame", "KC_PostMenu")
+local CreatePostMenu = function()
+	 	KCPostMenu = CreateFrame("Frame", "KC_PostMenu")
 		KCPostMenu.displayMode = "MENU"
 		KCPostMenu.info = {}
 		KCPostMenu.HideMenu = function()
@@ -99,7 +95,133 @@ local 	KCPostMenu = CreateFrame("Frame", "KC_PostMenu")
 				CloseDropDownMenus()
 			end
 		end
+end
 
+local SetDefaults = function()
+	KCFrame:SetPoint("CENTER")
+	KCFrame:SetSize(200,200)
+	KCFrame:RegisterForDrag("LeftButton")
+	KCFrame:SetMovable(true)
+	KCFrame:SetAlpha(1)
+	KCFrame:SetClampedToScreen(true)
+	KCFrame:SetUserPlaced(true)
+	KCFrame:EnableMouse()
+	KCFrame:SetScript("OnUpdate", KCFrame.OnUpdate)
+	KCFrame:SetBackdrop(backdrop)
+	KCFrame:SetBackdropColor(1,1,1,0.5)
+	
+	KCNames:SetPoint("TOPLEFT")
+	KCNames:SetJustifyH("LEFT")
+	KCNames:SetText("Name1\nName2")
+	KCNames:SetFont(KillCounterFont, fontSize, fontFlags)
+	
+	KCCounts:SetPoint("TOPRIGHT")
+	KCCounts:SetJustifyH("RIGHT")
+	KCCounts:SetText("##")
+	KCCounts:SetFont(KillCounterFont, fontSize, fontFlags)
+	
+	KCTitle:SetPoint("BOTTOMLEFT", KCFrame, "TOPLEFT")
+	KCTitle:SetJustifyH("LEFT")
+	KCTitle:SetText(pinkClr .. "Kill Counter")
+	KCTitle:SetFont(KillCounterFont, fontSize*1.5, fontFlags)
+	
+	KCSessionTime:SetPoint("BOTTOMRIGHT", KCFrame, "TOPRIGHT")
+	KCSessionTime:SetJustifyH("LEFT")
+	KCSessionTime:SetText("00:00")
+	KCSessionTime:SetFont(KillCounterFont, fontSize*1.5, fontFlags)
+	
+	KCPostButton:SetPoint("TOPRIGHT", KCFrame, "BOTTOMRIGHT")
+	KCPostButton:SetText("Post")
+	KCPostButton:SetWidth(50)
+	KCPostButton:SetHeight(20)
+	KCPostButton:RegisterForClicks("LeftButtonUp")
+end
+
+local RegisterEvents = function()
+	KCFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+end
+
+local SendToTable = function(name)
+	if(killLog[name] ~= nil) then
+		killLog[name] = killLog[name] + 1
+	else
+		killLog[name] = 1
+	end
+end
+
+local GetCombatLogInfo = function()
+	local _, eventType, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID = CombatLogGetCurrentEventInfo()
+		if(eventType == "UNIT_DIED") then
+			SendToTable(destName)
+		end
+end
+
+local FormatData = function()
+	names = ""
+	counts = ""
+	total = 0
+	
+	for key,value in pairs(killLog) do
+		names = names .. key .. "\n"
+		counts = counts .. value .. "\n"
+		total = total + value
+	end
+	
+	names = names .. "Total"
+	counts = counts .. total
+end
+
+local secondsFormat = function(t)
+	local days = floor(t/86400)
+	local hours = floor(mod(t, 86400)/3600)
+	local minutes = floor(mod(t,3600)/60)
+	local seconds = floor(mod(t,60))
+	if(t>3599) then 
+		return format("%01d:%02d:%02d",hours,minutes,seconds)
+	else
+		return format("%02d:%02d",minutes,seconds)
+	end
+end
+
+local SizeWindow = function()
+	KCFrame:SetSize(math.max((KCNames:GetStringWidth() + KCCounts:GetStringWidth()), 200),KCNames:GetStringHeight())
+end
+
+local Display = function()
+	FormatData()
+	KCNames:SetText(names)
+	KCCounts:SetText(counts)
+	KCSessionTime:SetText(secondsFormat(time()-tStart))
+	SizeWindow()
+end
+
+local PrintTableToLines = function(dest)
+	SendChatMessage("::KillCount:: KillLog: ", dest, "COMMON", nil)
+	for key,value in pairs(killLog) do
+		SendChatMessage(string.format("%-30s %s", key .. ":", value),dest,"COMMON",nil)
+	end
+	SendChatMessage("Total Kills:      " .. total, dest, "COMMON", nil)
+end
+
+local Initialize = function()
+	CreateFrames()
+	BackdropDefault()
+	CreatePostMenu()
+	SetDefaults()
+	--LoadTextures()
+	RegisterEvents()
+	Display()
+end
+
+SendToChat = function(dest, dataType)
+	if(dataType == "TOTAL") then
+		SendChatMessage("KillCount: Total Kills: " .. total, dest, "COMMON", nil)
+	elseif (dataType == "ALL") then
+		PrintTableToLines(dest)
+	end
+end
+
+Initialize()
 
 KCPostMenu.initialize = function(self, level) 
 	if not level then return end
@@ -175,127 +297,20 @@ KCPostMenu.initialize = function(self, level)
 	end
 end
 
-local SetDefaults = function()
-	KCFrame:SetPoint("CENTER")
-	KCFrame:SetSize(200,200)
-	KCFrame:RegisterForDrag("LeftButton")
-	KCFrame:SetMovable(true)
-	KCFrame:SetAlpha(1)
-	KCFrame:SetClampedToScreen(true)
-	KCFrame:SetUserPlaced(true)
-	KCFrame:EnableMouse()
-	KCFrame:SetScript("OnUpdate", KCFrame.OnUpdate)
-	KCFrame:SetBackdrop(backdrop)
-	KCFrame:SetBackdropColor(1,1,1,0.5)
-	
-	KCNames:SetPoint("TOPLEFT")
-	KCNames:SetJustifyH("LEFT")
-	KCNames:SetText("Name1\nName2")
-	KCNames:SetFont(KillCounterFont, fontSize, fontFlags)
-	
-	KCCounts:SetPoint("TOPRIGHT")
-	KCCounts:SetJustifyH("RIGHT")
-	KCCounts:SetText("##")
-	KCCounts:SetFont(KillCounterFont, fontSize, fontFlags)
-	
-	KCTitle:SetPoint("BOTTOMLEFT", KCFrame, "TOPLEFT")
-	KCTitle:SetJustifyH("LEFT")
-	KCTitle:SetText(redClr .. "Kill Counter 1.0")
-	KCTitle:SetFont(KillCounterFont, fontSize*1.5, fontFlags)
-	
-	KCPostButton:SetPoint("TOPRIGHT", KCFrame, "BOTTOMRIGHT")
-	KCPostButton:SetText("Post")
-	KCPostButton:SetWidth(50)
-	KCPostButton:SetHeight(20)
-	KCPostButton:RegisterForClicks("LeftButtonUp")
-end
-
-local RegisterEvents = function()
-	KCFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-end
-
-local SendToTable = function(name)
-	if(killLog[name] ~= nil) then
-		killLog[name] = killLog[name] + 1
-	else
-		killLog[name] = 1
-	end
-end
-
-local GetCombatLogInfo = function()
-	local _, eventType, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID = CombatLogGetCurrentEventInfo()
-		if(eventType == "UNIT_DIED") then
-			print(destName)
-			SendToTable(destName)
-		end
-end
-
-local FormatData = function()
-	names = ""
-	counts = ""
-	total = 0
-	
-	for key,value in pairs(killLog) do
-		names = names .. key .. "\n"
-		counts = counts .. value .. "\n"
-		total = total + value
+function KCFrame:OnUpdate(arg1)
+	timeSinceUpdate = timeSinceUpdate + arg1
+	if(updateInterval < timeSinceUpdate) then
+		Display()
+		
+		timeSinceUpdate = 0
 	end
 	
-	names = names .. "Total"
-	counts = counts .. total
 end
-
-local FormatAllData = function()
-		namesAndCounts = ""
-	for key,value in pairs(killLog) do
-		namesAndCounts = namesAndCounts .. key .. ":  " .. value .. "\n"
-	end
-end
-
-local SizeWindow = function()
-	KCFrame:SetSize(math.max((KCNames:GetStringWidth() + KCCounts:GetStringWidth()), 200),KCNames:GetStringHeight())
-end
-
-local Display = function()
-	FormatData()
-	KCNames:SetText(names)
-	KCCounts:SetText(counts)
-	SizeWindow()
-end
-
-local PrintStringToLines = function(dest)
-	SendChatMessage("KillCount: Kill Log: ", dest, "COMMON", nil)
-	for str in string.gmatch(namesAndCounts, "([^".. "\n" .."]+)") do
-		SendChatMessage(str, dest, "COMMON", nil)
-	end
-	SendChatMessage("Total Kills: " .. total, dest, "COMMON", nil)
-end
-
-local Initialize = function()
-	CreateFrames()
-	BackdropDefault()
-	SetDefaults()
-	--LoadTextures()
-	RegisterEvents()
-	Display()
-end
-
-SendToChat = function(dest, dataType)
-	if(dataType == "TOTAL") then
-		SendChatMessage("KillCount: Total Kills: " .. total, dest, "COMMON", nil)
-	elseif (dataType == "ALL") then
-		FormatAllData()
-		PrintStringToLines(dest)
-	end
-end
-
-Initialize()
 
 KCFrame:SetScript("OnEvent",
 	function(self, event, ...)
 	if(event == "COMBAT_LOG_EVENT_UNFILTERED") then
 		GetCombatLogInfo()
-		Display()
 	end
 end)
 
@@ -328,7 +343,7 @@ KCPostButton:SetScript('OnMouseUp', function(self, button)
 	ToggleDropDownMenu(1, nil, KCPostMenu, self:GetName(), 0, 0)
 end)
 
-
+KCFrame:SetScript("OnUpdate", KCFrame.OnUpdate)
 
 
 
