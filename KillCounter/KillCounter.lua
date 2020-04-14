@@ -1,5 +1,5 @@
-KillCounterVariables = {
-	trackGlobalKills = true
+KillCounterVarrables = {
+
 }
 
 
@@ -34,6 +34,7 @@ local timeSinceUpdate = 0
 local updateInterval = 1
 
 local playerName = UnitName("player")
+local trackGlobalKills = true
 
 
 
@@ -69,22 +70,6 @@ end
 
 SlashCmdList["KILLCOUNTER"] = handler;
 
-local Variables_Frame = CreateFrame("Frame")
-Variables_Frame:RegisterEvent("ADDON_LOADED")
-Variables_Frame:SetScript("OnEvent",
-	function(self, event, ...)
-
-		local arg1 = ...
-		if(arg1 == "KillCounter") then
-			DEFAULT_CHAT_FRAME:AddMessage(print(pinkClr .. "KillCounter " .. versionNumber .. " Loaded!"))
-			print(KillCounterVariables.trackGlobalKills)
-			if (KillCounterVariables.trackGlobalKills == nil) then
-				print("It was nil")
-				KillCounterVariables.trackGlobalKills = false
-			end			
-		end
-	end)
-
 BackdropDefault = function(alpha)
 
 background = "Interface\\TutorialFrame\\TutorialFrameBackground"
@@ -107,10 +92,7 @@ local CreateFrames = function()
 	KCSessionTime=KCFrame:CreateFontString(nil,"OVERLAY","GameFontNormal")
 	KCPostButton=CreateFrame("Button","KCPostButton",KCFrame,"UIPanelButtonGrayTemplate")
 	KCResetButton=CreateFrame("Button","KCResetButton", KCFrame,"UIPanelButtonGrayTemplate")
-	KCTrackModeButton=CreateFrame("Button","KCTrackModeButton", KCFrame, "UIPanelButtonGrayTemplate")
 	KCLockButton=CreateFrame("Button","KCLockButton", KCFrame, "UIPanelButtonGrayTemplate")
-	KCChatFrame=CreateFrame("Frame","ChatFrame",UIParent)
-	
 end
 
 local CreatePostMenu = function()
@@ -154,27 +136,21 @@ local SetDefaults = function()
 	
 	KCPostButton:SetPoint("TOPRIGHT", KCFrame, "BOTTOMRIGHT")
 	KCPostButton:SetText("Post")
-	KCPostButton:SetWidth(40)
+	KCPostButton:SetWidth(50)
 	KCPostButton:SetHeight(20)
 	KCPostButton:RegisterForClicks("LeftButtonUp")
 	
 	KCResetButton:SetPoint("TOPRIGHT", KCPostButton, "TOPLEFT")
 	KCResetButton:SetText("Reset")
-	KCResetButton:SetWidth(40)
+	KCResetButton:SetWidth(50)
 	KCResetButton:SetHeight(20)
 	KCResetButton:RegisterForClicks("LeftButtonUp")
 	
 	KCLockButton:SetPoint("TOPRIGHT", KCResetButton, "TOPLEFT")
 	KCLockButton:SetText("Lock")
-	KCLockButton:SetWidth(40)
+	KCLockButton:SetWidth(50)
 	KCLockButton:SetHeight(20)
 	KCLockButton:RegisterForClicks("LeftButtonUp")
-	
-	KCTrackModeButton:SetPoint("TOPRIGHT", KCLockButton, "TOPLEFT")
-	KCTrackModeButton:SetText(pinkClr .. "Personal")
-	KCTrackModeButton:SetWidth(60)
-	KCTrackModeButton:SetHeight(20)
-	KCTrackModeButton:RegisterForClicks("LeftButtonUp")
 end
 
 updateFontSize = function()
@@ -186,8 +162,7 @@ end
 
 local RegisterEvents = function()
 	KCFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-	KCChatFrame:RegisterEvent("CHAT_MSG_MONSTER_YELL")
-	KCFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	KCFrame:RegisterEvent("ADDON_LOADED")
 end
 
 local SendToTable = function(name)
@@ -200,7 +175,7 @@ end
 
 local GetCombatLogInfo = function()
 	local aaa, eventType, bbb, sourceGUID, sourceName, ccc, ddd, destGUID, destName, eee, fff, spellID = CombatLogGetCurrentEventInfo()
-		if(KillCounterVariables.trackGlobalKills) then
+		if(trackGlobalKills) then
 			if(eventType == "UNIT_DIED") then
 				SendToTable(destName)
 			end
@@ -372,24 +347,9 @@ KCFrame:SetScript("OnEvent",
 		local arg1 = ...
 		if(event == "COMBAT_LOG_EVENT_UNFILTERED") then
 			GetCombatLogInfo()
+		elseif(event == "ADDON_LOADED" and arg1 == "KillCounter") then
+			print(pinkClr .. "KillCounter " .. versionNumber .. " Loaded!")
 		end
-		if(event == "PLAYER_ENTERING_WORLD") then
-			if(KillCounterVariables.trackGlobalKills) then
-				KCTrackModeButton:SetText(pinkClr .. "Global")
-			else
-				KCTrackModeButton:SetText(pinkClr .. "Personal")
-			end
-		end
-			
-end)
-
-KCChatFrame:SetScript("OnEvent",
-	function(self, event, ...)
-	local chatMessage, playerName, arg3, channelName, arg5, arg6, arg7, arg8, arg9 = ...
-		if(chatMessage == "The living are here!") then
-			PlaySoundFile("Interface\\AddOns\\KillCounter\\Sounds\\airhorn.ogg", "Master")
-		end
-
 end)
 
 KCFrame:SetScript("OnMouseDown", function(self, button)
@@ -425,16 +385,6 @@ KCResetButton:SetScript('OnMouseUp', function(self, button)
 	killLog = {}
 	Display()
 	tStart = time()
-end)
-
-KCTrackModeButton:SetScript('OnMouseUp', function(self, button)
-	if(KillCounterVariables.trackGlobalKills) then
-		KillCounterVariables.trackGlobalKills = false
-		KCTrackModeButton:SetText(pinkClr .. "Personal")
-	else
-		KillCounterVariables.trackGlobalKills = true
-		KCTrackModeButton:SetText(pinkClr .. "Global")
-	end
 end)
 
 KCLockButton:SetScript('OnMouseUp', function(self, button)

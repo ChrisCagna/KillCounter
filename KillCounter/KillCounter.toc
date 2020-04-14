@@ -1,0 +1,9 @@
+## Interface: 11302
+## Author: Chris
+## Title: Kill Counter
+## Notes: Tracks What has been killed
+## Version: 0.1
+## OptionalDeps: 
+## SavedVariables: KillCounterVariables
+## SavedVariablesPerCharacter:
+KillCounter.lua
