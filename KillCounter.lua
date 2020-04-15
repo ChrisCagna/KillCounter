@@ -209,15 +209,30 @@ local GetCombatLogInfo = function()
 		end
 end
 
+function getKeysSortedByValue(tbl, sortFunction)
+  local keys = {}
+  for key in pairs(tbl) do
+    table.insert(keys, key)
+  end
+
+  table.sort(keys, function(a, b)
+    return sortFunction(tbl[b], tbl[a])
+  end)
+
+  return keys
+end
+
 local FormatData = function()
 	names = ""
 	counts = ""
 	total = 0
 	
-	for key,value in pairs(killLog) do
+	local sortedKeys = getKeysSortedByValue(killLog, function(a, b) return a < b end)
+	
+	for _, key in ipairs(sortedKeys) do
 		names = names .. key .. "\n"
-		counts = counts .. value .. "\n"
-		total = total + value
+		counts = counts .. killLog[key] .. "\n"
+		total = total + killLog[key]
 	end
 	
 	names = names .. "Total"
@@ -249,9 +264,11 @@ local Display = function()
 end
 
 local PrintTableToLines = function(dest)
+	local sortedKeys = getKeysSortedByValue(killLog, function(a, b) return a < b end)
+	
 	SendChatMessage("::KillCount:: KillLog: ", dest, "COMMON", nil)
-	for key,value in pairs(killLog) do
-		SendChatMessage(string.format("%-30s %s", key .. ":", value),dest,"COMMON",nil)
+	for _, key in ipairs(sortedKeys) do
+		SendChatMessage(string.format("%-30s %s", key .. ":", killLog[key]),dest,"COMMON",nil)
 	end
 	SendChatMessage("Total Kills:      " .. total, dest, "COMMON", nil)
 end
