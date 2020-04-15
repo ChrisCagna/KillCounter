@@ -267,6 +267,7 @@ local PrintTableToLines = function(dest)
 	local sortedKeys = getKeysSortedByValue(killLog, function(a, b) return a < b end)
 	
 	SendChatMessage("::KillCount:: KillLog: ", dest, "COMMON", nil)
+	SendChatMessage("Session Time: " .. secondsFormat(time()-tStart), dest, "COMMON", nil)
 	for _, key in ipairs(sortedKeys) do
 		SendChatMessage(string.format("%-30s %s", key .. ":", killLog[key]),dest,"COMMON",nil)
 	end
@@ -286,6 +287,7 @@ end
 SendToChat = function(dest, dataType)
 	if(dataType == "TOTAL") then
 		SendChatMessage("KillCount: Total Kills: " .. total, dest, "COMMON", nil)
+		SendChatMessage("Session Time: " .. secondsFormat(time()-tStart), dest, "COMMON", nil)
 	elseif (dataType == "ALL") then
 		PrintTableToLines(dest)
 	end
